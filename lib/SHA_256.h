@@ -17,10 +17,10 @@ uint32_t S1(uint32_t x) { return right_rotate(x, 6) ^ right_rotate(x, 11) ^ righ
 uint32_t ch(uint32_t x, uint32_t y, uint32_t z) { return (x & y) ^ (~x & z); }
 uint32_t maj(uint32_t x, uint32_t y, uint32_t z) { return (x & y) ^ (x & z) ^ (y & z); }
 
-void hash(char *text)
+unsigned char *hash(char *text)
 {
     /* Hex constants */
-    uint32_t H[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+    uint32_t H[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19}, H1, H2, H3, H4;
     
     uint32_t K[64] = {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
@@ -138,13 +138,44 @@ void hash(char *text)
     free(bit_array);
     
     /* Display the final hash */
+    /*
     printf("Message: \"%s\"\n", text);
     printf("Hash: ");
     
     for(i=0; i<8; i++)
         printf("%08x", H[i]);
     
-    printf("\n");
+    printf("\n");*/
+
+    // Non original author section :ppp 
+    // Few modifications required 
+    unsigned char *hash_bytes = (unsigned char*)calloc(32, sizeof(unsigned char));
+
+    int index = 0;
+    for (int i=0; i<8; i++) {
+        // Get first byte
+        H1 = H[i] >> 24;
+
+        // Get second byte.. etc.
+        H2 = H[i] << 8;
+        H2 = H2 >> 24;
+
+        // third
+        H3 = H[i] << 16;
+        H3 = H3 >> 24;
+
+        // 4
+        H4 = H[i] << 24;
+        H4 = H4 >> 24;
+
+        hash_bytes[index + 0] = H1;
+        hash_bytes[index + 1] = H2;
+        hash_bytes[index + 2] = H3;
+        hash_bytes[index + 3] = H4;
+        index += 4;
+    }
+    
+    return hash_bytes;
 }
 
 int derive_k(uint64_t l)

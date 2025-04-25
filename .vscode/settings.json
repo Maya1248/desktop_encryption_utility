@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stdio.h": "c",
-        "aes_256_ecb.h": "c"
+        "aes_256_ecb.h": "c",
+        "sha_256.h": "c"
     }
 }
