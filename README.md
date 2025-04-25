@@ -6,7 +6,7 @@ Password storage: SHA-256 of the password stored in a dictionary in a home direc
 Dictionary: key-value pair holding absolute names of files next to the hashes
 
 Usage:
-aes-util <argument> <option> <name> <password>
+aes-util argument option name password
 
 argument  - encrypt/decrypt
 option    - file/folder
@@ -24,5 +24,6 @@ dictionary.
 
 
 =Lib sources=:
+
 AES_256_ECB.h  - https://github.com/halloweeks/AES-256-ECB/blob/main/AES_256_ECB.h
 SHA_256.h      - https://gist.github.com/AugFJTan/ad5979f4d5f1147baa9ebe269ed5e107
