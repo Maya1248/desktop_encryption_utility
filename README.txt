@@ -2,7 +2,7 @@ Desktop (Windows, Linux etc.) command line utility.
 Simplistic Encryption/Decryption of files with a password.
 
 Algorithm: AES-256 ECB (no IV)
-Password storage: SHA-256 of the password stored at the beginning of a file. First 32 bytes of the file are padded for the hash.
+Password storage: SHA-256 of the password stored at the end of a file. 32 bytes are added to the file for the hash at the end.
 Note: The password storage method is rather weak. Vulnerable to multiple attacks such as: rainbow tables, wordlist brute-forcing etc.
 
 Usage:

@@ -41,25 +41,6 @@ int hasEnc(char *file_name) {
     return -1;
 }
 
-int check_password(char *password_string, char *file_name) {
-    FILE *fptr = fopen(file_name, "rb+");
-    unsigned char *password_hash = hash(password_string);
-    unsigned char password_hash_buffer[32];
-
-    fread(password_hash_buffer, sizeof(unsigned char), 32, fptr);
-    for (int i = 0; i < 32; i++) {
-        if (password_hash[i] != password_hash_buffer[i]) {
-            free(password_hash);
-            fclose(fptr);
-            return 1;
-        }
-    }
-
-    free(password_hash);
-    fclose(fptr);
-    return 0;
-}
-
 void add_padding_to_file(FILE *fptr, long long file_size) {  // Does NOT close the file.
     int check = file_size % AES_BLOCK_SIZE;
     
@@ -80,7 +61,7 @@ void encrypt_file(char *file_name, char *password) {
 
     AES_CTX ctx;
     unsigned char data_buffer[AES_BLOCK_SIZE];  //  bytes storing data; 16 bytes
-    unsigned char *key = hash(password);
+    unsigned char *key = hash(password); // 32 bytes hash
 
     long long file_size = get_file_size(file_name);
     fptr = fopen(file_name, "rb+");
@@ -112,7 +93,7 @@ void decrypt_file(char *file_name, char *password) {
 
     AES_CTX ctx;
     unsigned char data_buffer[AES_BLOCK_SIZE];  //  bytes storing data; 16 bytes
-    unsigned char *key = hash(password);
+    unsigned char *key = hash(password);  // 32 bytes hash :3
 
     long long file_size = get_file_size(file_name);
     fptr = fopen(file_name, "rb+");
@@ -141,4 +122,23 @@ void decrypt_file(char *file_name, char *password) {
 
     free(new_name);
     free(key);
+}
+
+int check_password(char *password_string, char *file_name) {
+    FILE *fptr = fopen(file_name, "rb+");
+    unsigned char *password_hash = hash(password_string);
+    
+    long long file_size = get_file_size(file_name);
+
+    for (int i = 0; i < 32; i++) {
+        if (password_hash[i] != 0) {
+            free(password_hash);
+            fclose(fptr);
+            return 1;
+        }
+    }
+
+    free(password_hash);
+    fclose(fptr);
+    return 0;
 }

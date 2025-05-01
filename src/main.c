@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
 
 	if (strcmp(argument, "encrypt") == 0) {
 		if (hasEnc(file_name) == 0) {
-			printf("This file has .enc extension and is assumed to be encrypted. Exiting...\n");
+			printf("This file has .enc extension and is assumed to be already encrypted. Exiting...\n");
 			return 1;
 		}
 
@@ -54,6 +54,14 @@ int main(int argc, char *argv[]) {
 	} else if (strcmp(argument, "decrypt") == 0) {
 		if (hasEnc(file_name) != 0) {
 			printf("This file does not have .enc extension and is assumed to be not encrypted. Exiting...\n");
+			return 1;
+		}
+		if (get_file_size(file_name) < 16) {
+			printf("Stop messing around! You just took a tini-tiny file and added .enc at the end to see what would happen >:3\n");
+			return 1;
+		}
+		if (get_file_size(file_name) % 16 != 0) {
+			printf("If this file were encrypted by me, the file size would be divisible by 16 bytes. This one is not. Can not proceed.\n");
 			return 1;
 		}
 
