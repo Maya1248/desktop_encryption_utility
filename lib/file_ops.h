@@ -75,11 +75,12 @@ void add_padding_to_file(FILE *fptr, long long file_size) {  // Does NOT close t
     }
 }
 
-void encrypt_file(char *file_name, unsigned char *key) {
+void encrypt_file(char *file_name, char *password) {
     FILE *fptr;
 
     AES_CTX ctx;
     unsigned char data_buffer[AES_BLOCK_SIZE];  //  bytes storing data; 16 bytes
+    unsigned char *key = hash(password);
 
     long long file_size = get_file_size(file_name);
     fptr = fopen(file_name, "rb+");
@@ -106,11 +107,12 @@ void encrypt_file(char *file_name, unsigned char *key) {
     free(key);
 }
 
-void decrypt_file(char *file_name, unsigned char *key) {
+void decrypt_file(char *file_name, char *password) {
     FILE *fptr;
 
     AES_CTX ctx;
     unsigned char data_buffer[AES_BLOCK_SIZE];  //  bytes storing data; 16 bytes
+    unsigned char *key = hash(password);
 
     long long file_size = get_file_size(file_name);
     fptr = fopen(file_name, "rb+");

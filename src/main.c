@@ -20,52 +20,52 @@ void help() {
 }
 
 int main(int argc, char *argv[]) {
-	
-	/*
-	unsigned char *bytes;
-	bytes = hash("Test 0 1 Test   2");
-
-	dump_bytes(bytes, 32);
-
-	free(bytes);
-
-	
-	for (int i = 0; i < argc; i++) {
-		printf("%s\n", argv[i]);
-	}
-	*/
 
 	if (argc != 4) {  // Handles arguments
 		help();
 		return 1;
 	}
-	if (strcmp(argv[1], "encrypt") != 0 && strcmp(argv[1], "decrypt") != 0) {
+
+	char *argument = argv[1];
+	char *file_name = argv[2];
+	char *password = argv[3];
+
+	if (strcmp(argument, "encrypt") != 0 && strcmp(argument, "decrypt") != 0) {
 		help();
 		printf("Wrong argument provided.\n");
 		return 1;
 	}
-	if (is_writable(argv[2]) != 0) {  // SHOULD handle relative/absolute file paths, not just current working directory...
+	if (is_writable(file_name) != 0) {  // SHOULD handle relative/absolute file paths, not just current working directory...
 		help();
 		printf("Can not access file.\n");
 		return 1;
 	} // Assuming the user performs proper path handling in linux/windows on terminal.
-	
-	
-	if (hasEnc(argv[2]) != 0) {
-		printf("File does not have .enc extension and is assumed not encrypted.\n");
-		return 1;
+
+
+	if (strcmp(argument, "encrypt") == 0) {
+		if (hasEnc(file_name) == 0) {
+			printf("This file has .enc extension and is assumed to be encrypted. Exiting...\n");
+			return 1;
+		}
+
+		encrypt_file(file_name, password);
+		printf("%s encrypted.\n", file_name);
+
+	} else if (strcmp(argument, "decrypt") == 0) {
+		if (hasEnc(file_name) != 0) {
+			printf("This file does not have .enc extension and is assumed to be not encrypted. Exiting...\n");
+			return 1;
+		}
+
+		// Password check
+		if (check_password(password, file_name) != 0) {
+			printf("Wrong password!\n");
+			return 1;
+		}
+
+		decrypt_file(file_name, password);
+		printf("%s decrypted.\n", file_name);
 	}
-
-
-
-	// Password check
-	if (check_password(argv[3], argv[2]) != 0) {
-		printf("Wrong password!\n");
-		printf("NOTE: Keep in mind, I assume that this file even has a password to begin with.\n");
-		return 1;
-	}
-
-
 
 	return 0;
 }
