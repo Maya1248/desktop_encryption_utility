@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-#include "../lib/AES_256_ECB.h"
-#include "../lib/SHA_256.h"
+//#include "../lib/AES_256_ECB.h"
+//#include "../lib/SHA_256.h"
 #include "../lib/file_ops.h"
 
 void dump_bytes(unsigned char *bytes, int size) {

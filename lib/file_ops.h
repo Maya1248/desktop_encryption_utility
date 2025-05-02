@@ -75,7 +75,17 @@ void encrypt_file(char *file_name, char *password) {
         AES_Encrypt(&ctx, data_buffer, data_buffer);
         fwrite(data_buffer, sizeof(unsigned char), AES_BLOCK_SIZE, fptr);
     }
-    
+    // add password checking 01s pad
+    unsigned char pad[AES_BLOCK_SIZE];
+    for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+        if (i % 2 == 0) {
+            pad[i] = 0;
+        } else {
+            pad[i] = 1;
+        }
+    }
+    fwrite(pad, sizeof(unsigned char), AES_BLOCK_SIZE, fptr);
+
     AES_CTX_Free(&ctx);    
     fclose(fptr);
 
@@ -125,20 +135,45 @@ void decrypt_file(char *file_name, char *password) {
 }
 
 int check_password(char *password_string, char *file_name) {
+    AES_CTX ctx;
     FILE *fptr = fopen(file_name, "rb+");
-    unsigned char *password_hash = hash(password_string);
+
+    unsigned char *key = hash(password_string);
     
     long long file_size = get_file_size(file_name);
+    unsigned char *encrypted_pad = (unsigned char*)calloc(sizeof(unsigned char), AES_BLOCK_SIZE);
 
-    for (int i = 0; i < 32; i++) {
-        if (password_hash[i] != 0) {
-            free(password_hash);
-            fclose(fptr);
-            return 1;
+    fseek(fptr, file_size - 32, SEEK_SET);
+    fread(encrypted_pad, sizeof(unsigned char), AES_BLOCK_SIZE, fptr);
+
+    AES_DecryptInit(&ctx, key);
+    AES_Decrypt(&ctx, encrypted_pad, encrypted_pad);
+    
+    AES_CTX_Free(&ctx);    
+    fclose(fptr);
+
+    // DEBUGGING
+    for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+        printf("%d ", encrypted_pad[i]);
+    }
+    printf("\n");
+
+    for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+        if (i % 2 == 0) {
+            if (encrypted_pad[i] != 0) {
+                free(encrypted_pad);
+                return 1;
+            }
+            
+        } else {
+            if (encrypted_pad[i] != 1) {
+                free(encrypted_pad);
+                return 1;
+            }
+            
         }
     }
 
-    free(password_hash);
-    fclose(fptr);
+    free(encrypted_pad);
     return 0;
 }
