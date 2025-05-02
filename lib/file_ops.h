@@ -79,12 +79,18 @@ void encrypt_file(char *file_name, char *password) {
     unsigned char pad[AES_BLOCK_SIZE];
     for (int i = 0; i < AES_BLOCK_SIZE; i++) {
         if (i % 2 == 0) {
-            pad[i] = 0;
+            pad[i] = (unsigned char)0;
         } else {
-            pad[i] = 1;
+            pad[i] = (unsigned char)1;
         }
     }
     fwrite(pad, sizeof(unsigned char), AES_BLOCK_SIZE, fptr);
+
+    // DEBUGGING
+    for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+        printf("%02x ", pad[i]);
+    }
+    printf("\n");
 
     AES_CTX_Free(&ctx);    
     fclose(fptr);
@@ -110,7 +116,7 @@ void decrypt_file(char *file_name, char *password) {
 
     AES_DecryptInit(&ctx, key);
 
-    for (long long i = 0; i < file_size; i += AES_BLOCK_SIZE) {
+    for (long long i = 0; i < file_size - 16; i += AES_BLOCK_SIZE) {
         fread(data_buffer, sizeof(unsigned char), AES_BLOCK_SIZE, fptr);
         fseek(fptr, i, SEEK_SET);
         AES_Decrypt(&ctx, data_buffer, data_buffer);
@@ -141,9 +147,9 @@ int check_password(char *password_string, char *file_name) {
     unsigned char *key = hash(password_string);
     
     long long file_size = get_file_size(file_name);
-    unsigned char *encrypted_pad = (unsigned char*)calloc(sizeof(unsigned char), AES_BLOCK_SIZE);
+    unsigned char encrypted_pad[AES_BLOCK_SIZE];
 
-    fseek(fptr, file_size - 32, SEEK_SET);
+    fseek(fptr, file_size - 16, SEEK_SET);
     fread(encrypted_pad, sizeof(unsigned char), AES_BLOCK_SIZE, fptr);
 
     AES_DecryptInit(&ctx, key);
@@ -154,26 +160,23 @@ int check_password(char *password_string, char *file_name) {
 
     // DEBUGGING
     for (int i = 0; i < AES_BLOCK_SIZE; i++) {
-        printf("%d ", encrypted_pad[i]);
+        printf("%02x ", encrypted_pad[i]);
     }
     printf("\n");
 
     for (int i = 0; i < AES_BLOCK_SIZE; i++) {
         if (i % 2 == 0) {
-            if (encrypted_pad[i] != 0) {
-                free(encrypted_pad);
+            if (encrypted_pad[i] != (unsigned char)0) {
                 return 1;
             }
             
         } else {
-            if (encrypted_pad[i] != 1) {
-                free(encrypted_pad);
+            if (encrypted_pad[i] != (unsigned char)1) {
                 return 1;
             }
             
         }
     }
 
-    free(encrypted_pad);
     return 0;
 }

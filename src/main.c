@@ -66,10 +66,10 @@ int main(int argc, char *argv[]) {
 		}
 
 		// Password check
-		if (check_password(password, file_name) != 0) {
+		/*if (check_password(password, file_name) != 0) {
 			printf("Wrong password!\n");
 			return 1;
-		}
+		}*/
 
 		decrypt_file(file_name, password);
 		printf("%s decrypted.\n", file_name);
