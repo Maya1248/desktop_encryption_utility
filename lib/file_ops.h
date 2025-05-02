@@ -20,8 +20,8 @@ int is_writable(char *file_name) {
     return 1;
 }
 
-long long get_file_size(char *relative_name) {
-    FILE *fptr = fopen(relative_name, "rb");
+long long get_file_size(char *file_name) {
+    FILE *fptr = fopen(file_name, "rb");
 
     fseek(fptr, 0, SEEK_END);
     long long file_size = ftell(fptr);
@@ -41,7 +41,55 @@ int hasEnc(char *file_name) {
     return -1;
 }
 
-void add_padding_to_file(FILE *fptr, long long file_size) {  // Does NOT close the file.
+void truncate_file_16bytes(char *file_name) {  // EXTREMELY shitty universal file truncate method
+    long long file_size = get_file_size(file_name);
+
+    FILE *fptr = fopen(file_name, "rb");
+
+    char backup_name[256];
+    strcat(backup_name, file_name);
+    strcat(backup_name, ".BAK");
+
+    FILE *new_file = fopen(backup_name, "wb");
+
+    long long new_size = file_size - 16;
+    unsigned char buffer[16];
+
+    for (long long i = 0; i < new_size; i++) {
+        fread(buffer, sizeof(unsigned char), 1, fptr);
+        fwrite(buffer, sizeof(unsigned char), 1, new_file);
+    }
+    
+    fclose(fptr);
+    fclose(new_file);
+
+    remove(file_name);
+    rename(backup_name, file_name);
+}
+
+void add_pass_check_padding(char *file_name) { 
+    long long file_size = get_file_size(file_name);
+    FILE *fptr = fopen(file_name, "rb+");
+
+    unsigned char zero_ones[16];
+    for (int i = 0; i < 16; i++) {
+        if (i % 2 == 0) {
+            zero_ones[i] = 0;
+        } else {
+            zero_ones[i] = 1;
+        }
+    }
+
+    fseek(fptr, 0, SEEK_END);
+    fwrite(zero_ones, sizeof(unsigned char), 16, fptr);
+
+    fclose(fptr);
+}
+
+void add_padding_to_file(char *file_name) {
+    long long file_size = get_file_size(file_name); 
+    FILE *fptr = fopen(file_name, "rb+");
+
     int check = file_size % AES_BLOCK_SIZE;
     
     if (check != 0) {
@@ -52,8 +100,9 @@ void add_padding_to_file(FILE *fptr, long long file_size) {  // Does NOT close t
         memset(tmp_buffer, 0, AES_BLOCK_SIZE);
         fwrite(tmp_buffer, sizeof(unsigned char), amount_to_add, fptr);   // pad the file
 
-        fseek(fptr, 0, SEEK_SET);
     }
+
+    fclose(fptr);
 }
 
 void encrypt_file(char *file_name, char *password) {
@@ -63,10 +112,11 @@ void encrypt_file(char *file_name, char *password) {
     unsigned char data_buffer[AES_BLOCK_SIZE];  //  bytes storing data; 16 bytes
     unsigned char *key = hash(password); // 32 bytes hash
 
+    add_padding_to_file(file_name);
+    add_pass_check_padding(file_name);
     long long file_size = get_file_size(file_name);
-    fptr = fopen(file_name, "rb+");
 
-    add_padding_to_file(fptr, file_size);
+    fptr = fopen(file_name, "rb+");
     AES_EncryptInit(&ctx, key);
 
     for (long long i = 0; i < file_size; i += AES_BLOCK_SIZE) {
@@ -75,22 +125,6 @@ void encrypt_file(char *file_name, char *password) {
         AES_Encrypt(&ctx, data_buffer, data_buffer);
         fwrite(data_buffer, sizeof(unsigned char), AES_BLOCK_SIZE, fptr);
     }
-    // add password checking 01s pad
-    unsigned char pad[AES_BLOCK_SIZE];
-    for (int i = 0; i < AES_BLOCK_SIZE; i++) {
-        if (i % 2 == 0) {
-            pad[i] = (unsigned char)0;
-        } else {
-            pad[i] = (unsigned char)1;
-        }
-    }
-    fwrite(pad, sizeof(unsigned char), AES_BLOCK_SIZE, fptr);
-
-    // DEBUGGING
-    for (int i = 0; i < AES_BLOCK_SIZE; i++) {
-        printf("%02x ", pad[i]);
-    }
-    printf("\n");
 
     AES_CTX_Free(&ctx);    
     fclose(fptr);
@@ -112,11 +146,11 @@ void decrypt_file(char *file_name, char *password) {
     unsigned char *key = hash(password);  // 32 bytes hash :3
 
     long long file_size = get_file_size(file_name);
-    fptr = fopen(file_name, "rb+");
 
+    fptr = fopen(file_name, "rb+");
     AES_DecryptInit(&ctx, key);
 
-    for (long long i = 0; i < file_size - 16; i += AES_BLOCK_SIZE) {
+    for (long long i = 0; i < file_size; i += AES_BLOCK_SIZE) {
         fread(data_buffer, sizeof(unsigned char), AES_BLOCK_SIZE, fptr);
         fseek(fptr, i, SEEK_SET);
         AES_Decrypt(&ctx, data_buffer, data_buffer);
@@ -136,17 +170,20 @@ void decrypt_file(char *file_name, char *password) {
 
     rename(file_name, new_name);
 
+    truncate_file_16bytes(new_name);
+
     free(new_name);
     free(key);
 }
 
 int check_password(char *password_string, char *file_name) {
     AES_CTX ctx;
-    FILE *fptr = fopen(file_name, "rb+");
 
     unsigned char *key = hash(password_string);
     
     long long file_size = get_file_size(file_name);
+    FILE *fptr = fopen(file_name, "rb+");
+    
     unsigned char encrypted_pad[AES_BLOCK_SIZE];
 
     fseek(fptr, file_size - 16, SEEK_SET);
@@ -157,6 +194,7 @@ int check_password(char *password_string, char *file_name) {
     
     AES_CTX_Free(&ctx);    
     fclose(fptr);
+    free(key);
 
     // DEBUGGING
     for (int i = 0; i < AES_BLOCK_SIZE; i++) {
@@ -166,15 +204,14 @@ int check_password(char *password_string, char *file_name) {
 
     for (int i = 0; i < AES_BLOCK_SIZE; i++) {
         if (i % 2 == 0) {
-            if (encrypted_pad[i] != (unsigned char)0) {
+            if (encrypted_pad[i] != 0) {
                 return 1;
             }
             
         } else {
-            if (encrypted_pad[i] != (unsigned char)1) {
+            if (encrypted_pad[i] != 1) {
                 return 1;
-            }
-            
+            }           
         }
     }
 
