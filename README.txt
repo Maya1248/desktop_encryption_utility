@@ -1,9 +1,17 @@
 Desktop (Windows, Linux etc.) command line utility.
 Simplistic Encryption/Decryption of files with a password.
 
-Algorithm: AES-256 ECB (no IV)
-Password storage: SHA-256 of the password stored at the end of a file. 32 bytes are added to the file for the hash at the end.
-Note: The password storage method is rather weak. Vulnerable to multiple attacks such as: rainbow tables, wordlist brute-forcing etc.
+Algorithm:
+AES-256 ECB (no IV)
+
+Password storage:
+Non-existent. 16 bytes of alternating 01 pattern is added at the end of the file and encrypted.
+Password is checked such that the last 16 bytes are decrypted using whatever password you provided;
+If the result ends up being the static 01 pattern, your password is correct and the whole file is decrypted. 
+
+Note:
+The method here used is rather simplistic and weak to wordlist attacks.
+But if someone already got access to your device in order to do that, you kind of have bigger problems >:3
 
 Usage:
 aes-util ARGUMENT FILE PASSWORD
