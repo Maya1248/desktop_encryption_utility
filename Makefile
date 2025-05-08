@@ -1,7 +1,7 @@
 CC=gcc
 
-all: main
+all: aes-util
 
-main: ./src/main.c
-	gcc ./src/main.c -o ./bin/main
+aes-util: ./src/main.c
+	gcc ./src/main.c -o ./bin/aes-util
 
