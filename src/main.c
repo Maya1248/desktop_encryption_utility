@@ -47,6 +47,12 @@ int main(int argc, char *argv[]) {
 			printf("This file has .enc extension and is assumed to be already encrypted. Exiting...\n");
 			return 1;
 		}
+		long long file_size = get_file_size(file_name);
+		
+		if (file_size >= 20 * 1024 * 1024) { // 20 megabytes
+			printf("%s is larger than 20 mega-bytes. Encryption could take a while, press Enter to continue...", file_name);
+			getchar();
+		}
 
 		encrypt_file(file_name, password);
 		printf("%s encrypted.\n", file_name);

@@ -197,10 +197,11 @@ int check_password(char *password_string, char *file_name) {
     free(key);
 
     // DEBUGGING
+    /*
     for (int i = 0; i < AES_BLOCK_SIZE; i++) {
         printf("%02x ", encrypted_pad[i]);
     }
-    printf("\n");
+    printf("\n");*/
 
     for (int i = 0; i < AES_BLOCK_SIZE; i++) {
         if (i % 2 == 0) {
